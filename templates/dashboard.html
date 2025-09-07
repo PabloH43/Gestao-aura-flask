@@ -1,0 +1,174 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-2">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'warning' if category=='warning' else 'success' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+
+
+
+
+
+
+
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Dashboard</h2>
+
+    <!-- Totais -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total a Receber</h5>
+                    <p class="card-text" id="totalReceber">R$ {{ total_receber }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total a Pagar</h5>
+                    <p class="card-text" id="totalPagar">R$ {{ total_pagar }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Saldo</h5>
+                    <p class="card-text" id="saldo">R$ {{ saldo }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-2">
+        <div class="col-md-2">
+            <input type="text" class="form-control filterInput" placeholder="Filtrar Tipo" data-column="1">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control filterInput" placeholder="Filtrar Entidade" data-column="2">
+        </div>
+        <div class="col-md-2">
+            <input type="text" class="form-control filterInput" placeholder="Filtrar Categoria" data-column="3">
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control filterInput" placeholder="Filtrar Descrição" data-column="4">
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control filterInput" placeholder="Filtrar Status" data-column="7">
+        </div>
+    </div>
+
+    <!-- Transações -->
+    <h4>Transações</h4>
+    <table class="table table-striped" id="transacoesTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Entidade</th>
+                <th>Categoria</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transacoes %}
+            <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.tipo }}</td>
+                <td>{{ t.entidade }}</td>
+                <td>{{ t.categoria }}</td>
+                <td>{{ t.descricao }}</td>
+                <td>R$ {{ formatar_valor(t.valor) }}</td>
+                <td>{{ formatar_data(t.data_vencimento) }}</td>
+                <td>{{ t.status }}</td>
+                <td>
+                    <a href="{{ url_for('edit_transacao', id=t.id) }}" class="btn btn-sm btn-warning">✏️</a>
+                    <a href="{{ url_for('delete_transacao', id=t.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Deseja realmente excluir?')">🗑️</a>
+                    <a href="{{ url_for('transacao_whatsapp', id=t.id) }}" class="btn btn-sm btn-success" target="_blank">📱 WhatsApp </a>
+                    <a href="{{ url_for('transacao_pdf', id=t.id) }}" class="btn btn-sm btn-info">📄</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Contas a Pagar -->
+    <h4>Contas a Pagar</h4>
+    <ul>
+        {% for c in contas_pagar %}
+        <li>{{ c.entidade }} - {{ c.descricao }} - R$ {{ formatar_valor(c.valor) }} - {{ formatar_data(c.data_vencimento) }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Contas a Receber -->
+    <h4>Contas a Receber</h4>
+    <ul>
+        {% for c in contas_receber %}
+        <li>{{ c.entidade }} - {{ c.descricao }} - R$ {{ formatar_valor(c.valor) }} - {{ formatar_data(c.data_vencimento) }}</li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Script para filtros e totais dinâmicos -->
+<script>
+function atualizarTotais() {
+    const table = document.getElementById("transacoesTable");
+    let totalReceber = 0;
+    let totalPagar = 0;
+
+    table.querySelectorAll("tbody tr").forEach(row => {
+        if (row.style.display === "none") return;
+
+        const tipo = row.cells[1].textContent.trim().toLowerCase();
+        let valorText = row.cells[5].textContent.trim();
+        valorText = valorText.replace("R$", "").replace(/\./g, "").replace(",", ".");
+        const valor = parseFloat(valorText) || 0;
+
+        if (tipo === "entrada") totalReceber += valor;
+        else if (tipo === "saída") totalPagar += valor;
+    });
+
+    const saldo = totalReceber - totalPagar;
+
+    document.getElementById("totalReceber").textContent = "R$ " + totalReceber.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    document.getElementById("totalPagar").textContent = "R$ " + totalPagar.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+    document.getElementById("saldo").textContent = "R$ " + saldo.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+}
+
+// Filtros
+document.querySelectorAll(".filterInput").forEach(input => {
+    input.addEventListener("keyup", () => {
+        const column = input.dataset.column;
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById("transacoesTable");
+
+        table.querySelectorAll("tbody tr").forEach(row => {
+            const cellValue = row.cells[column].textContent.toLowerCase();
+            row.style.display = cellValue.includes(filter) ? "" : "none";
+        });
+
+        atualizarTotais();
+    });
+});
+
+window.onload = atualizarTotais;
+</script>
+{% endblock %}

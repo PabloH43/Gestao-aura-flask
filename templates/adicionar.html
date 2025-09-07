@@ -1,0 +1,108 @@
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    label {
+        margin-top: 10px;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    input, select, button {
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        margin-top: 5px;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        margin-top: 20px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+</style>
+
+<h2>📝 Adicionar Transação</h2>
+
+<form method="post">
+
+    <label>Tipo:</label>
+    <select name="tipo" id="tipo" required>
+        <option value="Entrada">💰 Entrada</option>
+        <option value="Saída">💸 Saída</option>
+    </select>
+
+    <label>Entidade:</label>
+    <select name="entidade" id="entidade" required onchange="atualizarEntidades()">
+        {% for e in entidades %}
+        <option value="{{ e }}">{{ e }}</option>
+        {% endfor %}
+        <option value="__novo__">➕ Nova Entidade</option>
+    </select>
+
+    <div id="nova_entidade_div" class="hidden">
+        <input type="text" name="nova_entidade" placeholder="Digite nova entidade">
+    </div>
+
+    <label>Categoria:</label>
+    <select name="categoria" id="categoria" onchange="atualizarCategoria()">
+        {% for c in categorias %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+        <option value="__nova__">➕ Nova Categoria</option>
+    </select>
+
+    <div id="nova_categoria_div" class="hidden">
+        <input type="text" name="nova_categoria" placeholder="Digite nova categoria">
+    </div>
+
+    <label>Descrição:</label>
+    <input type="text" name="descricao" placeholder="Ex: Venda para Paulo">
+
+    <label>Valor (R$):</label>
+    <input type="number" step="0.01" name="valor" placeholder="Ex: 150.00" required>
+
+    <label>Data:</label>
+    <input type="date" name="data" required>
+
+    <label>Status:</label>
+    <select name="status" required>
+        <option value="Pendente">⏳ Pendente</option>
+        <option value="Pago">✅ Pago</option>
+    </select>
+
+    <button type="submit">💾 Salvar Transação</button>
+
+</form>
+
+<script>
+function atualizarEntidades() {
+    let select = document.getElementById("entidade");
+    let novaDiv = document.getElementById("nova_entidade_div");
+    novaDiv.className = select.value === "__novo__" ? "" : "hidden";
+}
+
+function atualizarCategoria() {
+    let select = document.getElementById("categoria");
+    let novaDiv = document.getElementById("nova_categoria_div");
+    novaDiv.className = select.value === "__nova__" ? "" : "hidden";
+}
+</script>
